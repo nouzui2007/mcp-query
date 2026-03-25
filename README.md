@@ -4,7 +4,7 @@
 
 ## 概要
 
-テキストで質問を入力すると、Claude AI が意図を解釈してG空間情報センターの MCP サーバーを呼び出し、関連するデータセットをリスト形式で回答します。
+テキストで質問を入力すると、LLM が意図を解釈してG空間情報センターの MCP サーバーを呼び出し、関連するデータセットをリスト形式で回答します。
 
 **主な機能**
 
@@ -19,7 +19,6 @@
 **技術スタック**
 
 - [Next.js](https://nextjs.org/) 16 (App Router)
-- [Claude API](https://docs.anthropic.com/) (claude-sonnet-4-6, tool_use)
 - TypeScript / Tailwind CSS
 - Vercel（デプロイ先）
 
@@ -28,7 +27,7 @@
 ### 必要なもの
 
 - Node.js 18 以上
-- Anthropic API キー（[console.anthropic.com](https://console.anthropic.com) で取得）
+- 使用する LLM プロバイダーの API キー（下記参照）
 
 ### 手順
 
@@ -44,10 +43,36 @@ npm install
 cp .env.local.example .env.local
 ```
 
-`.env.local` を編集して API キーを設定します。
+`.env.local` を編集して使用するプロバイダーと API キーを設定します。
+
+## LLM プロバイダーの選択
+
+`LLM_PROVIDER` 環境変数でプロバイダーを切り替えられます。
+
+### Anthropic（デフォルト）
+
+使用モデル: `claude-sonnet-4-6`
+
+1. [console.anthropic.com](https://console.anthropic.com) でアカウントを作成
+2. **API Keys** ページでキーを発行
+3. `.env.local` に設定:
 
 ```
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Google（Gemini）
+
+使用モデル: `gemini-2.0-flash`
+
+1. [aistudio.google.com](https://aistudio.google.com) にアクセス（Googleアカウントで無料サインイン）
+2. **Get API Key** → **Create API key** でキーを発行
+3. `.env.local` に設定:
+
+```
+LLM_PROVIDER=google
+GOOGLE_API_KEY=AIza...
 ```
 
 ## ローカル実行
@@ -62,11 +87,15 @@ npm run dev
 
 1. GitHub にプッシュ
 2. [vercel.com](https://vercel.com) でリポジトリをインポート
-3. **Environment Variables** に `ANTHROPIC_API_KEY` を設定
+3. **Environment Variables** に以下を設定:
+   - `LLM_PROVIDER`（`anthropic` または `google`）
+   - 対応する API キー
 4. Deploy
 
 ## 環境変数
 
-| 変数名 | 説明 | 必須 |
+| 変数名 | 説明 | デフォルト |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Anthropic API キー | ✅ |
+| `LLM_PROVIDER` | 使用するLLMプロバイダー（`anthropic` / `google`） | `anthropic` |
+| `ANTHROPIC_API_KEY` | Anthropic API キー（Anthropic使用時に必須） | — |
+| `GOOGLE_API_KEY` | Google AI Studio API キー（Google使用時に必須） | — |
