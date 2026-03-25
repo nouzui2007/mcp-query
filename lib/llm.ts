@@ -159,7 +159,7 @@ async function chatWithGoogle(messages: Message[], sessionId: string): Promise<s
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
+    model: process.env.GOOGLE_MODEL ?? "gemini-1.5-flash",
     systemInstruction: SYSTEM_PROMPT,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tools: GOOGLE_TOOLS as any,
