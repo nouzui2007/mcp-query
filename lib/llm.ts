@@ -4,6 +4,17 @@ import { callMcpTool, createMcpSession } from "./mcp-client";
 
 export type Message = { role: "user" | "assistant"; content: string };
 
+export type McpCall = {
+  tool: string;
+  args: Record<string, unknown>;
+  result: string;
+};
+
+export type ChatResult = {
+  reply: string;
+  mcpCalls: McpCall[];
+};
+
 const SYSTEM_PROMPT = `あなたはG空間情報センター（gspatial.jp）のデータ検索アシスタントです。
 ユーザーの自然言語による質問に対して、適切なツールを使ってデータセットを検索・取得し、わかりやすく日本語で回答してください。
 
@@ -52,13 +63,15 @@ const ANTHROPIC_TOOLS: Anthropic.Tool[] = [
   },
 ];
 
-async function chatWithAnthropic(messages: Message[], sessionId: string): Promise<string> {
+async function chatWithAnthropic(messages: Message[], sessionId: string): Promise<ChatResult> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   let currentMessages: Anthropic.MessageParam[] = messages.map((m) => ({
     role: m.role,
     content: m.content,
   }));
+
+  const mcpCalls: McpCall[] = [];
 
   for (let i = 0; i < 10; i++) {
     const response = await client.messages.create({
@@ -70,10 +83,11 @@ async function chatWithAnthropic(messages: Message[], sessionId: string): Promis
     });
 
     if (response.stop_reason === "end_turn") {
-      return response.content
+      const reply = response.content
         .filter((c): c is Anthropic.TextBlock => c.type === "text")
         .map((c) => c.text)
         .join("\n");
+      return { reply, mcpCalls };
     }
 
     if (response.stop_reason === "tool_use") {
@@ -82,20 +96,15 @@ async function chatWithAnthropic(messages: Message[], sessionId: string): Promis
       );
       const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
         toolUseBlocks.map(async (block) => {
+          const args = block.input as Record<string, unknown>;
           try {
-            const result = await callMcpTool(
-              sessionId,
-              block.name,
-              block.input as Record<string, unknown>
-            );
+            const result = await callMcpTool(sessionId, block.name, args);
+            mcpCalls.push({ tool: block.name, args, result });
             return { type: "tool_result" as const, tool_use_id: block.id, content: result };
           } catch (err: unknown) {
-            return {
-              type: "tool_result" as const,
-              tool_use_id: block.id,
-              content: `エラー: ${err instanceof Error ? err.message : "不明なエラー"}`,
-              is_error: true,
-            };
+            const errMsg = `エラー: ${err instanceof Error ? err.message : "不明なエラー"}`;
+            mcpCalls.push({ tool: block.name, args, result: errMsg });
+            return { type: "tool_result" as const, tool_use_id: block.id, content: errMsg, is_error: true };
           }
         })
       );
@@ -109,7 +118,7 @@ async function chatWithAnthropic(messages: Message[], sessionId: string): Promis
     }
   }
 
-  return "申し訳ありません、回答を生成できませんでした。";
+  return { reply: "申し訳ありません、回答を生成できませんでした。", mcpCalls };
 }
 
 // ---- Google ----------------------------------------------------------
@@ -155,7 +164,7 @@ const GOOGLE_TOOLS = [
   },
 ];
 
-async function chatWithGoogle(messages: Message[], sessionId: string): Promise<string> {
+async function chatWithGoogle(messages: Message[], sessionId: string): Promise<ChatResult> {
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
   const model = genAI.getGenerativeModel({
@@ -165,13 +174,13 @@ async function chatWithGoogle(messages: Message[], sessionId: string): Promise<s
     tools: GOOGLE_TOOLS as any,
   });
 
-  // 最後のメッセージ以外を履歴に変換
   const history = messages.slice(0, -1).map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: [{ text: m.content }],
   }));
 
   const chat = model.startChat({ history });
+  const mcpCalls: McpCall[] = [];
 
   let response = await chat.sendMessage(messages[messages.length - 1].content);
 
@@ -181,20 +190,15 @@ async function chatWithGoogle(messages: Message[], sessionId: string): Promise<s
 
     const functionResults = await Promise.all(
       functionCalls.map(async (call) => {
+        const args = call.args as Record<string, unknown>;
         try {
-          const result = await callMcpTool(
-            sessionId,
-            call.name,
-            call.args as Record<string, unknown>
-          );
+          const result = await callMcpTool(sessionId, call.name, args);
+          mcpCalls.push({ tool: call.name, args, result });
           return { functionResponse: { name: call.name, response: { result } } };
         } catch (err: unknown) {
-          return {
-            functionResponse: {
-              name: call.name,
-              response: { error: err instanceof Error ? err.message : "不明なエラー" },
-            },
-          };
+          const errMsg = err instanceof Error ? err.message : "不明なエラー";
+          mcpCalls.push({ tool: call.name, args, result: `エラー: ${errMsg}` });
+          return { functionResponse: { name: call.name, response: { error: errMsg } } };
         }
       })
     );
@@ -203,12 +207,12 @@ async function chatWithGoogle(messages: Message[], sessionId: string): Promise<s
     response = await chat.sendMessage(functionResults as any);
   }
 
-  return response.response.text();
+  return { reply: response.response.text(), mcpCalls };
 }
 
 // ---- Entry point -----------------------------------------------------
 
-export async function chat(messages: Message[]): Promise<string> {
+export async function chat(messages: Message[]): Promise<ChatResult> {
   const provider = (process.env.LLM_PROVIDER ?? "anthropic").toLowerCase();
   const sessionId = await createMcpSession();
 
