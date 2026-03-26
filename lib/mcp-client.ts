@@ -1,4 +1,8 @@
-const MCP_URL = process.env.MCP_URL ?? "https://rxfnmqd9va.ap-northeast-1.awsapprunner.com/mcp";
+function getMcpUrl(): string {
+  const url = process.env.MCP_URL;
+  if (!url) throw new Error("環境変数 MCP_URL が設定されていません");
+  return url;
+}
 
 function parseSseData(text: string): unknown {
   for (const line of text.split("\n")) {
@@ -14,7 +18,7 @@ function parseSseData(text: string): unknown {
 }
 
 export async function createMcpSession(): Promise<string> {
-  const res = await fetch(MCP_URL, {
+  const res = await fetch(getMcpUrl(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -36,7 +40,7 @@ export async function createMcpSession(): Promise<string> {
   if (!sessionId) throw new Error("MCPセッションIDの取得に失敗しました");
 
   // initialized 通知を送信
-  await fetch(MCP_URL, {
+  await fetch(getMcpUrl(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -58,7 +62,7 @@ export async function callMcpTool(
   name: string,
   args: Record<string, unknown>
 ): Promise<string> {
-  const res = await fetch(MCP_URL, {
+  const res = await fetch(getMcpUrl(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
