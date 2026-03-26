@@ -64,7 +64,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ### Google（Gemini）
 
-使用モデル: `gemini-2.0-flash`
+使用モデル: `gemini-2.5-flash`
 
 1. [aistudio.google.com](https://aistudio.google.com) にアクセス（Googleアカウントで無料サインイン）
 2. **Get API Key** → **Create API key** でキーを発行
@@ -96,7 +96,10 @@ npm run dev
 
 | 変数名 | 説明 | デフォルト |
 |---|---|---|
-| `MCP_URL` | MCPサーバーのURL | `https://rxfnmqd9va.ap-northeast-1.awsapprunner.com/mcp` |
+| `MCP_URL` | MCPサーバーのURL | **必須** |
 | `LLM_PROVIDER` | 使用するLLMプロバイダー（`anthropic` / `google`） | `anthropic` |
 | `ANTHROPIC_API_KEY` | Anthropic API キー（Anthropic使用時に必須） | — |
+| `ANTHROPIC_MODEL` | 使用するClaudeモデル | `claude-sonnet-4-6` |
+| `MAX_TOKENS` | LLMの最大出力トークン数 | `4096` |
 | `GOOGLE_API_KEY` | Google AI Studio API キー（Google使用時に必須） | — |
+| `GOOGLE_MODEL` | 使用するGeminiモデル | `gemini-2.5-flash` |

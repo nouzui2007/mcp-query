@@ -31,7 +31,7 @@ export async function createMcpSession(): Promise<string> {
       params: {
         protocolVersion: "2024-11-05",
         capabilities: {},
-        clientInfo: { name: "mcp-query-web", version: "1.0.0" },
+        clientInfo: { name: "mcp-query-web", version: process.env.npm_package_version ?? "0.0.0" },
       },
     }),
   });

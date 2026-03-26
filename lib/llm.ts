@@ -73,10 +73,13 @@ async function chatWithAnthropic(messages: Message[], sessionId: string): Promis
 
   const mcpCalls: McpCall[] = [];
 
+  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+  const maxTokens = parseInt(process.env.MAX_TOKENS ?? "4096", 10);
+
   for (let i = 0; i < 10; i++) {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4096,
+      model,
+      max_tokens: maxTokens,
       system: SYSTEM_PROMPT,
       messages: currentMessages,
       tools: ANTHROPIC_TOOLS,
