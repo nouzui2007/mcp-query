@@ -14,7 +14,7 @@
 
 **使用MCPサーバー**
 
-- `https://6b2mphec6a.ap-northeast-1.awsapprunner.com/mcp`（mcp-geospatial v1.26.0）
+- `https://rxfnmqd9va.ap-northeast-1.awsapprunner.com/mcp`（mcp-geospatial）
 
 **技術スタック**
 

@@ -1,4 +1,4 @@
-const MCP_URL = "https://6b2mphec6a.ap-northeast-1.awsapprunner.com/mcp";
+const MCP_URL = "https://rxfnmqd9va.ap-northeast-1.awsapprunner.com/mcp";
 
 function parseSseData(text: string): unknown {
   for (const line of text.split("\n")) {
