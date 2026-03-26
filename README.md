@@ -96,6 +96,7 @@ npm run dev
 
 | 変数名 | 説明 | デフォルト |
 |---|---|---|
+| `MCP_URL` | MCPサーバーのURL | `https://rxfnmqd9va.ap-northeast-1.awsapprunner.com/mcp` |
 | `LLM_PROVIDER` | 使用するLLMプロバイダー（`anthropic` / `google`） | `anthropic` |
 | `ANTHROPIC_API_KEY` | Anthropic API キー（Anthropic使用時に必須） | — |
 | `GOOGLE_API_KEY` | Google AI Studio API キー（Google使用時に必須） | — |
